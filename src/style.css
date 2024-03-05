@@ -1,0 +1,12 @@
+.root {
+  background-color: #f4f4f4;
+  height: 100vh;
+}
+
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #333;
+}
