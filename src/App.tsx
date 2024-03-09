@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import './style.css';
 import { FaGithub, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { axiosInstance } from './utils/axiosInstance';
+import Swal from 'sweetalert2';
 
 interface Todo {
   _id: string;
@@ -60,15 +61,27 @@ const App = () => {
   };
 
   const deleteTodoHandler = (id: string) => {
-    axiosInstance
-      .delete(`/todo/${id}`)
-      .then((response) => {
-        const updatedTodo = todo?.filter((item) => item._id !== id);
-        setTodo(updatedTodo);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axiosInstance
+          .delete(`/todo/${id}`)
+          .then((response) => {
+            const updatedTodo = todo?.filter((item) => item._id !== id);
+            setTodo(updatedTodo);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    });
   };
 
   return (
@@ -114,11 +127,8 @@ const App = () => {
           <div className="flex flex-col justify-center w-10/12 gap-3 mx-auto text-white rounded bg-cyan-700 lg:w-3/4">
             <div className="divide-y divide-white">
               {todo?.map((item, index) => (
-                <>
-                  <div
-                    key={index}
-                    className="flex flex-col justify-between w-full gap-3 p-5 mx-auto text-white rounded md:flex-row"
-                  >
+                <div key={index}>
+                  <div className="flex flex-col justify-between w-full gap-3 p-5 mx-auto text-white rounded md:flex-row">
                     <div className="flex flex-col justify-between gap-1 text-white rounded text-start">
                       <h3 className="font-bold text-md">{item.title}</h3>
                       <h3 className="">{item.description}</h3>
@@ -144,7 +154,7 @@ const App = () => {
                       </div>
                     </div>
                   </div>
-                </>
+                </div>
               ))}
             </div>
           </div>
