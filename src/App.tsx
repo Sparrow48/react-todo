@@ -3,16 +3,21 @@ import './style.css';
 import { FaGithub, FaLinkedin, FaFacebook } from 'react-icons/fa';
 import { axiosInstance } from './utils/axiosInstance';
 import Swal from 'sweetalert2';
+import Loader from './Loader';
 
 interface Todo {
   _id: string;
   title: string;
   description: string;
-  completed: boolean;
+  isCompleted: boolean;
 }
 
 const App = () => {
   const [todo, setTodo] = useState<Todo[] | []>([]);
+  const [page, setPage] = useState<number>(1);
+  const [disable, setDisable] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<string>('');
+  const [isStatusUpdating, setIsStatusUpdating] = useState<string>('');
 
   useEffect(() => {
     axiosInstance.get('/todo?page=1').then((response) => {
@@ -42,6 +47,8 @@ const App = () => {
   };
 
   const statusHandler = (id: string) => {
+    setIsStatusUpdating(id);
+    setDisable(true);
     axiosInstance
       .patch(`/todo/${id}`, {
         isCompleted: true,
@@ -49,13 +56,17 @@ const App = () => {
       .then((response) => {
         const updatedTodo = todo?.map((item) => {
           if (item._id === id) {
-            return { ...item, completed: true };
+            return { ...item, isCompleted: true };
           }
           return item;
         });
         setTodo(updatedTodo);
+        setDisable(false);
+        setIsStatusUpdating('');
       })
       .catch((error) => {
+        setDisable(false);
+        setIsStatusUpdating('');
         console.log(error);
       });
   };
@@ -71,23 +82,51 @@ const App = () => {
       confirmButtonText: 'Yes, delete it!',
     }).then((result) => {
       if (result.isConfirmed) {
+        setDisable(true);
+        setIsDeleting(id);
         axiosInstance
           .delete(`/todo/${id}`)
           .then((response) => {
             const updatedTodo = todo?.filter((item) => item._id !== id);
             setTodo(updatedTodo);
+            setDisable(false);
+            setIsDeleting('');
           })
           .catch((error) => {
+            setDisable(false);
+            setIsDeleting('');
             console.log(error);
           });
       }
     });
   };
 
+  const previousPageHandler = () => {
+    if (page > 1) {
+      setPage(page - 1);
+      getTodo(page - 1);
+    }
+  };
+
+  const nextPageHandler = () => {
+    if (todo?.length < 10) {
+      setDisable(true);
+      return;
+    }
+    setPage(page + 1);
+    getTodo(page + 1);
+  };
+
+  const getTodo = (_page: number) => {
+    axiosInstance.get(`/todo?page=${_page}`).then((response) => {
+      setTodo(response.data);
+    });
+  };
+
   return (
-    <div className="h-screen bg-cyan-900">
-      <div className="flex flex-col justify-between h-screen max-w-6xl gap-5 px-2 py-5 mx-auto text-center">
-        <div className="flex flex-col gap-5 px-2 py-5">
+    <div className="bg-cyan-900">
+      <div className="flex flex-col justify-between max-w-6xl gap-5 px-2 py-5 mx-auto text-center">
+        <div className="flex flex-col gap-5 px-2 pt-5">
           <h1 className="pb-3 text-3xl font-bold text-white">
             React todo app!
           </h1>
@@ -124,13 +163,19 @@ const App = () => {
             </form>
           </div>
 
-          <div className="flex flex-col justify-center w-10/12 gap-3 mx-auto text-white rounded bg-cyan-700 lg:w-3/4">
-            <div className="divide-y divide-white">
+          <div className="flex flex-col justify-center w-10/12 gap-3 mx-auto rounded bg-cyan-700 lg:w-3/4">
+            <div className="divide-y-2 divide-white">
               {todo?.map((item, index) => (
                 <div key={index}>
-                  <div className="flex flex-col justify-between w-full gap-3 p-5 mx-auto text-white rounded md:flex-row">
-                    <div className="flex flex-col justify-between gap-1 text-white rounded text-start">
-                      <h3 className="font-bold text-md">{item.title}</h3>
+                  <div
+                    className={`flex flex-col justify-between w-full gap-3 p-5 mx-auto  rounded md:flex-row ${item.isCompleted ? 'bg-green-200' : ' bg-orange-200'}`}
+                  >
+                    <div className="flex flex-col justify-between gap-1 rounded text-start">
+                      <h3
+                        className={`font-bold  text-md ${item.isCompleted ? 'line-through' : ' '}`}
+                      >
+                        {item.title}
+                      </h3>
                       <h3 className="">{item.description}</h3>
                     </div>
                     <div className="flex flex-col justify-center gap-1 text-white rounded">
@@ -139,17 +184,25 @@ const App = () => {
                           onClick={() => {
                             statusHandler(item?._id);
                           }}
-                          className="p-1 text-green-400 bg-white border-green-400 rounded"
+                          className={`p-1 text-green-400 bg-white border-green-400 rounded ${item.isCompleted ? 'line-through cursor-not-allowed' : ' '} ${disable ? 'cursor-not-allowed' : ''}`}
                         >
-                          Complete
+                          {isStatusUpdating === item._id ? (
+                            <Loader color={'#FF0000'} loading={true} />
+                          ) : (
+                            'Complete'
+                          )}
                         </button>
                         <button
                           onClick={() => {
                             deleteTodoHandler(item?._id);
                           }}
-                          className="p-1 text-red-400 bg-white border-red-400 rounded"
+                          className={`p-1 text-red-400 bg-white border-red-400 rounded ${disable ? 'cursor-not-allowed' : ''}`}
                         >
-                          Delete
+                          {isDeleting === item._id ? (
+                            <Loader color={'#FF0000'} loading={true} />
+                          ) : (
+                            'Delete'
+                          )}
                         </button>
                       </div>
                     </div>
@@ -158,6 +211,28 @@ const App = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-5 pb-2 pr-5 mx-auto text-center lg:w-3/4">
+          <button
+            onClick={() => {
+              previousPageHandler();
+            }}
+            className={`${page === 1 ? 'cursor-not-allowed' : ''} bg-white  px-4 py-2 rounded`}
+            disabled={page === 1}
+          >
+            {'<'}
+          </button>
+          <p className="text-lg font-semibold text-white">{page}</p>
+          <button
+            onClick={() => {
+              nextPageHandler();
+            }}
+            disabled={disable}
+            className={`px-4 py-2 bg-white rounded ${disable ? 'cursor-not-allowed' : ''}`}
+          >
+            {'>'}
+          </button>
         </div>
 
         <div className="flex flex-col items-center justify-center py-2 mx-auto text-center text-white rounded bg-cyan-700 lg:w-3/4">
