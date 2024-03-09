@@ -59,6 +59,18 @@ const App = () => {
       });
   };
 
+  const deleteTodoHandler = (id: string) => {
+    axiosInstance
+      .delete(`/todo/${id}`)
+      .then((response) => {
+        const updatedTodo = todo?.filter((item) => item._id !== id);
+        setTodo(updatedTodo);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
   return (
     <div className="h-screen bg-cyan-900">
       <div className="flex flex-col justify-between h-screen max-w-6xl gap-5 px-2 py-5 mx-auto text-center">
@@ -121,7 +133,12 @@ const App = () => {
                         >
                           Complete
                         </button>
-                        <button className="p-1 text-red-400 bg-white border-red-400 rounded">
+                        <button
+                          onClick={() => {
+                            deleteTodoHandler(item?._id);
+                          }}
+                          className="p-1 text-red-400 bg-white border-red-400 rounded"
+                        >
                           Delete
                         </button>
                       </div>
