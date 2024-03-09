@@ -16,6 +16,7 @@ const App = () => {
   const [todo, setTodo] = useState<Todo[] | []>([]);
   const [page, setPage] = useState<number>(1);
   const [disable, setDisable] = useState<boolean>(false);
+  const [disableNext, setDisableNext] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<string>('');
   const [isStatusUpdating, setIsStatusUpdating] = useState<string>('');
 
@@ -110,7 +111,7 @@ const App = () => {
 
   const nextPageHandler = () => {
     if (todo?.length < 10) {
-      setDisable(true);
+      setDisableNext(true);
       return;
     }
     setPage(page + 1);
@@ -228,8 +229,8 @@ const App = () => {
             onClick={() => {
               nextPageHandler();
             }}
-            disabled={disable}
-            className={`px-4 py-2 bg-white rounded ${disable ? 'cursor-not-allowed' : ''}`}
+            disabled={disableNext}
+            className={`px-4 py-2 bg-white rounded ${disableNext ? 'cursor-not-allowed' : ''}`}
           >
             {'>'}
           </button>
