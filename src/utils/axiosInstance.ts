@@ -1,5 +1,8 @@
 import axios from 'axios';
 
 export const axiosInstance = axios.create({
-  baseURL: 'https://fake-api-seven-rho.vercel.app/',
+  baseURL: 'http://localhost:4131/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
